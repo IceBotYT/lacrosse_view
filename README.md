@@ -2,7 +2,10 @@
 
 A library for retrieving data from [La Crosse View-connected sensors](https://www.lacrossetechnology.com/collections/lacrosse-view-connected).
 
-This library is **NOT** for the Jeelink LaCrosse sensors. You can find that library [here](https://pypi.org/project/pylacrosse/). There is also a [Home Assistant integration](https://home-assistant.io/integrations/lacrosse) for the Jeelink LaCrosse sensors.
+## Disclaimer
+
+This library is **NOT** for the Jeelink LaCrosse sensors. You can find that library [here](https://pypi.org/project/pylacrosse/).
+There is also a [Home Assistant integration](https://home-assistant.io/integrations/lacrosse) for the Jeelink LaCrosse sensors.
 
 ## Installation
 
