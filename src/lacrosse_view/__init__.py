@@ -28,17 +28,19 @@ class LaCrosse:
 
         payload = {"email": email, "password": password, "returnSecureToken": True}
 
+        data: dict[str, Any]
+
         if not self.websession:
             async with aiohttp.ClientSession() as session:
                 async with session.post(login_url, json=payload) as response:
-                    data: dict[str, Any] = await response.json()
+                    data = await response.json()
                     try:
                         self.token: str = data["idToken"]
                     except KeyError:
                         raise LoginError("Invalid credentials.")
         else:
             async with self.websession.post(login_url, json=payload) as response:
-                data: dict[str, Any] = await response.json()
+                data = await response.json()
                 try:
                     self.token: str = data["idToken"]
                 except KeyError:
@@ -60,6 +62,8 @@ class LaCrosse:
         )
         headers = {"Authorization": "Bearer " + self.token}
 
+        data: dict[str, Any]
+
         if not self.websession:
             async with aiohttp.ClientSession() as session:
                 async with session.get(locations_url, headers=headers) as response:
@@ -68,14 +72,14 @@ class LaCrosse:
                             "Failed to get locations, status code: "
                             + str(response.status)
                         )
-                    data: dict[str, Any] = await response.json()
+                    data = await response.json()
         else:
             async with self.websession.get(locations_url, headers=headers) as response:
                 if response.status != 200:
                     raise HTTPError(
                         "Failed to get locations, status code: " + str(response.status)
                     )
-                data: dict[str, Any] = await response.json()
+                data = await response.json()
 
         return [
             Location(id=location["id"], name=location["name"])
@@ -101,8 +105,8 @@ class LaCrosse:
         if start != "" and end != "":
             # Check if it is a valid Unix timestamp
             try:
-                start = datetime.datetime.fromtimestamp(int(start))
-                end = datetime.datetime.fromtimestamp(int(end))
+                datetime.datetime.fromtimestamp(int(start))
+                datetime.datetime.fromtimestamp(int(end))
             except ValueError:
                 raise ValueError("Invalid start or end time.")
             if start > end:
