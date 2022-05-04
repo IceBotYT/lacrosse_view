@@ -13,6 +13,10 @@ class LaCrosse:
     """Basic class to hold the LaCrosse data."""
 
     token: str = ""
+    websession: aiohttp.ClientSession | None = None
+
+    def __init__(self, websession: aiohttp.ClientSession | None = None):
+        self.websession = websession
 
     async def login(self, email: str, password: str) -> bool:
         """Login to the LaCrosse API."""
@@ -24,8 +28,16 @@ class LaCrosse:
 
         payload = {"email": email, "password": password, "returnSecureToken": True}
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(login_url, json=payload) as response:
+        if not self.websession:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(login_url, json=payload) as response:
+                    data: dict[str, Any] = await response.json()
+                    try:
+                        self.token: str = data["idToken"]
+                    except KeyError:
+                        raise LoginError("Invalid credentials.")
+        else:
+            async with self.websession.post(login_url, json=payload) as response:
                 data: dict[str, Any] = await response.json()
                 try:
                     self.token: str = data["idToken"]
@@ -48,8 +60,17 @@ class LaCrosse:
         )
         headers = {"Authorization": "Bearer " + self.token}
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(locations_url, headers=headers) as response:
+        if not self.websession:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(locations_url, headers=headers) as response:
+                    if response.status != 200:
+                        raise HTTPError(
+                            "Failed to get locations, status code: "
+                            + str(response.status)
+                        )
+                    data: dict[str, Any] = await response.json()
+        else:
+            async with self.websession.get(locations_url, headers=headers) as response:
                 if response.status != 200:
                     raise HTTPError(
                         "Failed to get locations, status code: " + str(response.status)
@@ -96,8 +117,17 @@ class LaCrosse:
             + str(location.id)
             + "/sensorAssociations?prettyPrint=false"
         )
-        async with aiohttp.ClientSession() as session:
-            async with session.get(sensors_url, headers=headers) as response:
+        if not self.websession:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(sensors_url, headers=headers) as response:
+                    if response.status != 200:
+                        raise HTTPError(
+                            "Failed to get location, status code: "
+                            + str(response.status)
+                        )
+                    data = await response.json()
+        else:
+            async with self.websession.get(sensors_url, headers=headers) as response:
                 if response.status != 200:
                     raise HTTPError(
                         "Failed to get location, status code: " + str(response.status)
@@ -145,8 +175,17 @@ class LaCrosse:
 
             headers = {"Authorization": "Bearer " + self.token}
 
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers) as response:
+            if not self.websession:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url, headers=headers) as response:
+                        if response.status != 200:
+                            raise HTTPError(
+                                "Failed to get sensor, status code: "
+                                + str(response.status)
+                            )
+                        data = await response.json()
+            else:
+                async with self.websession.get(url, headers=headers) as response:
                     if response.status != 200:
                         raise HTTPError(
                             "Failed to get sensor, status code: " + str(response.status)
@@ -174,8 +213,22 @@ class LaCrosse:
         body = {
             "firebaseRegistrationToken": "fpxASxqXfE_rvyNdMGe2Bd:APA91bH53k_fq0pWNpIwTla9CiOQgx8G1PLrKpp74AfdTHPgwh3g0RZNopQQ-POqmNVyaW_2vT9I7nYz0RdWqY1DU4uNIx4vOzZPQwn7mHD6uvtYH8qxwedB3cLOBmSpOdAOkH2jTN4c"
         }
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, json=body, headers=headers) as response:
+        if not self.websession:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, json=body, headers=headers) as response:
+                    if response.status != 200:
+                        raise HTTPError(
+                            "Failed to logout, status code: " + str(response.status)
+                        )
+                    data = await response.json()
+                    if data["message"] != "Operation Successful":
+                        raise HTTPError("Failed to logout, message: " + data["message"])
+                    self.token = ""
+                    return True
+        else:
+            async with self.websession.post(
+                url, json=body, headers=headers
+            ) as response:
                 if response.status != 200:
                     raise HTTPError(
                         "Failed to logout, status code: " + str(response.status)
