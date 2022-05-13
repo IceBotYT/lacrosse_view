@@ -149,6 +149,8 @@ class LaCrosse:
                     x for x in sensor.get("fields") if x.lower() != "notsupported"
                 ],
                 "location": location,
+                "permissions": sensor.get("permissions"),
+                "model": sensor.get("type").get("name"),
             }
 
             fields_str = (
@@ -260,6 +262,8 @@ class Sensor(BaseModel):
     sensor_id: str
     sensor_field_names: list[str]
     location: Location
+    permissions: dict[str, bool]
+    model: str
     data: dict[str, Any]
 
 
