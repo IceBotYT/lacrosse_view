@@ -7,6 +7,31 @@ import aiohttp
 from pydantic import BaseModel
 from pytz import timezone
 import datetime
+import asyncio
+from collections.abc import Awaitable, Callable
+
+
+def _retry(
+    func: Callable[..., Awaitable[list[Sensor]]]
+) -> Callable[..., Awaitable[list[Sensor]]]:
+    """Handle query retries."""
+
+    async def wrapper(obj, *args, **kwargs) -> list[Sensor]:
+        """Wrap all query functions."""
+        update_retries = 5
+        while update_retries > 0:
+            try:
+                result = await func(obj, *args, **kwargs)
+                break
+            except HTTPError as error:
+                update_retries -= 1
+                if update_retries == 0:
+                    raise error
+                await asyncio.sleep(1)
+
+        return result
+
+    return wrapper
 
 
 class LaCrosse:
@@ -18,6 +43,7 @@ class LaCrosse:
     def __init__(self, websession: aiohttp.ClientSession | None = None):
         self.websession = websession
 
+    @_retry
     async def login(self, email: str, password: str) -> bool:
         """Login to the LaCrosse API."""
         login_url = (
@@ -51,6 +77,7 @@ class LaCrosse:
 
         return True
 
+    @_retry
     async def get_locations(self) -> list[Location]:
         """Get all locations."""
         if self.token == "":
@@ -86,6 +113,7 @@ class LaCrosse:
             for location in data["items"]
         ]
 
+    @_retry
     async def get_sensors(
         self,
         location: Location,
@@ -208,6 +236,7 @@ class LaCrosse:
 
         return devices
 
+    @_retry
     async def logout(self) -> bool:
         """Logout from the LaCrosse API."""
         url = (
@@ -221,7 +250,7 @@ class LaCrosse:
         }
         if not self.websession:
             async with aiohttp.ClientSession() as session:
-                async with session.post(url, json=body, headers=headers) as response:
+                async with session.delete(url, json=body, headers=headers) as response:
                     if response.status != 200:
                         raise HTTPError(
                             "Failed to logout, status code: " + str(response.status)
@@ -232,7 +261,7 @@ class LaCrosse:
                     self.token = ""
                     return True
         else:
-            async with self.websession.post(
+            async with self.websession.delete(
                 url, json=body, headers=headers
             ) as response:
                 if response.status != 200:
