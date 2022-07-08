@@ -63,3 +63,6 @@ target/
 
 # Basic test, nothing special
 src/test.py
+
+# Output from various tests
+*.txt

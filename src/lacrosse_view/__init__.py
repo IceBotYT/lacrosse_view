@@ -8,12 +8,12 @@ from pydantic import BaseModel
 from pytz import timezone
 import datetime
 import asyncio
-from collections.abc import Awaitable, Callable
+from collections.abc import Coroutine, Callable
 
 
 def _retry(
-    func: Callable[..., Awaitable[list[Sensor]]]
-) -> Callable[..., Awaitable[list[Sensor]]]:
+    func: Any
+) -> Any:
     """Handle query retries."""
 
     async def wrapper(obj, *args, **kwargs) -> list[Sensor]:
@@ -120,7 +120,7 @@ class LaCrosse:
         tz: str = "America/New_York",
         start: str = "",
         end: str = "",
-    ) -> list[dict[str, Any]]:
+    ) -> list[Sensor]:
         """Get all sensors."""
 
         if self.token == "":
