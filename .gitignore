@@ -66,3 +66,6 @@ src/test.py
 
 # Output from various tests
 *.txt
+
+# Snyk
+.dccache

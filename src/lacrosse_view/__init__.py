@@ -9,29 +9,47 @@ from pytz import timezone
 import datetime
 import asyncio
 from collections.abc import Coroutine, Callable
+from functools import wraps
 
 
-def _retry(
-    func: Any
-) -> Any:
-    """Handle query retries."""
+# def _retry() -> Callable[
+#     [
+#         Callable[
+#             [LaCrosse, str | Location | None, str | None, str | None, str | None],
+#             Coroutine[None, None, bool | list[Location] | list[Sensor]],
+#         ]
+#     ],
+#     Callable[[Any, Any, Any], bool | list[Location] | list[Sensor]],
+# ]:
+#     """Handle query retries."""
 
-    async def wrapper(obj, *args, **kwargs) -> list[Sensor]:
-        """Wrap all query functions."""
-        update_retries = 5
-        while update_retries > 0:
-            try:
-                result = await func(obj, *args, **kwargs)
-                break
-            except HTTPError as error:
-                update_retries -= 1
-                if update_retries == 0:
-                    raise error
-                await asyncio.sleep(1)
+#     def _decorator(
+#         func: Callable[
+#             [LaCrosse, str | Location | None, str | None, str | None, str | None],
+#             Coroutine[None, None, bool | list[Location] | list[Sensor]],
+#         ]
+#     ) -> Callable[[Any, Any, Any], bool | list[Location] | list[Sensor]]:
+#         @wraps(func)
+#         async def wrapper(
+#             obj: Any, *args: Any, **kwargs: Any
+#         ) -> bool | list[Location] | list[Sensor]:
+#             """Wrap all query functions."""
+#             update_retries = 5
+#             while update_retries > 0:
+#                 try:
+#                     result = await func(obj, *args, **kwargs)
+#                     break
+#                 except HTTPError as error:
+#                     update_retries -= 1
+#                     if update_retries == 0:
+#                         raise error
+#                     await asyncio.sleep(1)
 
-        return result
+#             return result
 
-    return wrapper
+#         return wrapper
+
+#     return _decorator
 
 
 class LaCrosse:
@@ -43,7 +61,7 @@ class LaCrosse:
     def __init__(self, websession: aiohttp.ClientSession | None = None):
         self.websession = websession
 
-    @_retry
+    # @_retry()
     async def login(self, email: str, password: str) -> bool:
         """Login to the LaCrosse API."""
         login_url = (
@@ -77,7 +95,7 @@ class LaCrosse:
 
         return True
 
-    @_retry
+    # @_retry()
     async def get_locations(self) -> list[Location]:
         """Get all locations."""
         if self.token == "":
@@ -113,7 +131,7 @@ class LaCrosse:
             for location in data["items"]
         ]
 
-    @_retry
+    # @_retry()
     async def get_sensors(
         self,
         location: Location,
@@ -236,7 +254,7 @@ class LaCrosse:
 
         return devices
 
-    @_retry
+    # @_retry()
     async def logout(self) -> bool:
         """Logout from the LaCrosse API."""
         url = (
