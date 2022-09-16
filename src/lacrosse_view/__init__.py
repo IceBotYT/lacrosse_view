@@ -101,29 +101,31 @@ class LaCrosse:
         if self.token == "":
             raise LoginError("Login first.")
 
+        headers = {"Authorization": f"Bearer {self.token}"}
+
+        data: dict[str, Any]
+
         locations_url = (
             "https://lax-gateway.appspot.com/"
             "_ah/api/lacrosseClient/v1.1/active-user/locations"
         )
-        headers = {"Authorization": "Bearer " + self.token}
-
-        data: dict[str, Any]
 
         if not self.websession:
             async with aiohttp.ClientSession() as session:
                 async with session.get(locations_url, headers=headers) as response:
                     if response.status != 200:
                         raise HTTPError(
-                            "Failed to get locations, status code: "
-                            + str(response.status)
+                            f"Failed to get locations, status code: {str(response.status)}"
                         )
+
                     data = await response.json()
         else:
             async with self.websession.get(locations_url, headers=headers) as response:
                 if response.status != 200:
                     raise HTTPError(
-                        "Failed to get locations, status code: " + str(response.status)
+                        f"Failed to get locations, status code: {str(response.status)}"
                     )
+
                 data = await response.json()
 
         return [
@@ -158,32 +160,25 @@ class LaCrosse:
             if start > end:
                 raise ValueError("Start time cannot be after end time.")
 
-        devices = list()
-        headers = {"Authorization": "Bearer " + self.token}
+        headers = {"Authorization": f"Bearer {self.token}"}
 
-        sensors_url = (
-            "https://lax-gateway.appspot.com/"
-            "_ah/api/lacrosseClient/v1.1/active-user/location/"
-            + str(location.id)
-            + "/sensorAssociations?prettyPrint=false"
-        )
+        sensors_url = f"https://lax-gateway.appspot.com/_ah/api/lacrosseClient/v1.1/active-user/location/{str(location.id)}/sensorAssociations?prettyPrint=false"
+
         if not self.websession:
             async with aiohttp.ClientSession() as session:
                 async with session.get(sensors_url, headers=headers) as response:
                     if response.status != 200:
-                        raise HTTPError(
-                            "Failed to get location, status code: "
-                            + str(response.status)
-                        )
+                        raise HTTPError(f"Failed to get location, status code: {str(response.status)}")
                     data = await response.json()
         else:
             async with self.websession.get(sensors_url, headers=headers) as response:
                 if response.status != 200:
-                    raise HTTPError(
-                        "Failed to get location, status code: " + str(response.status)
-                    )
+                    raise HTTPError(f"Failed to get location, status code: {str(response.status)}")
                 data = await response.json()
 
+        aggregates = "ai.ticks.1"
+
+        devices = []
         for device in data.get("items"):
             sensor = device.get("sensor")
             device = {
@@ -205,8 +200,6 @@ class LaCrosse:
                 else None
             )
 
-            aggregates = "ai.ticks.1"
-
             url = (
                 "https://ingv2.lacrossetechnology.com/"
                 "api/v1.1/active-user/device-association/ref.user-device.{id}/"
@@ -225,23 +218,18 @@ class LaCrosse:
                 )
             )
 
-            headers = {"Authorization": "Bearer " + self.token}
+            headers = {"Authorization": f"Bearer {self.token}"}
 
             if not self.websession:
                 async with aiohttp.ClientSession() as session:
                     async with session.get(url, headers=headers) as response:
                         if response.status != 200:
-                            raise HTTPError(
-                                "Failed to get sensor, status code: "
-                                + str(response.status)
-                            )
+                            raise HTTPError(f"Failed to get sensor, status code: {str(response.status)}")
                         data = await response.json()
             else:
                 async with self.websession.get(url, headers=headers) as response:
                     if response.status != 200:
-                        raise HTTPError(
-                            "Failed to get sensor, status code: " + str(response.status)
-                        )
+                        raise HTTPError(f"Failed to get sensor, status code: {str(response.status)}")
                     data = await response.json()
 
             device["data"] = data.get("ref.user-device." + device["device_id"])[
@@ -262,7 +250,7 @@ class LaCrosse:
             "_ah/api/lacrosseClient/v1.1/user/devices"
             "?prettyPrint=false"
         )
-        headers = {"Authorization": "Bearer " + self.token}
+        headers = {"Authorization": f"Bearer {self.token}"}
         body = {
             "firebaseRegistrationToken": "fpxASxqXfE_rvyNdMGe2Bd:APA91bH53k_fq0pWNpIwTla9CiOQgx8G1PLrKpp74AfdTHPgwh3g0RZNopQQ-POqmNVyaW_2vT9I7nYz0RdWqY1DU4uNIx4vOzZPQwn7mHD6uvtYH8qxwedB3cLOBmSpOdAOkH2jTN4c"
         }
@@ -270,9 +258,7 @@ class LaCrosse:
             async with aiohttp.ClientSession() as session:
                 async with session.delete(url, json=body, headers=headers) as response:
                     if response.status != 200:
-                        raise HTTPError(
-                            "Failed to logout, status code: " + str(response.status)
-                        )
+                        raise HTTPError(f"Failed to logout, status code: {str(response.status)}")
                     data = await response.json()
                     if data["message"] != "Operation Successful":
                         raise HTTPError("Failed to logout, message: " + data["message"])
@@ -280,12 +266,10 @@ class LaCrosse:
                     return True
         else:
             async with self.websession.delete(
-                url, json=body, headers=headers
-            ) as response:
+                        url, json=body, headers=headers
+                    ) as response:
                 if response.status != 200:
-                    raise HTTPError(
-                        "Failed to logout, status code: " + str(response.status)
-                    )
+                    raise HTTPError(f"Failed to logout, status code: {str(response.status)}")
                 data = await response.json()
                 if data["message"] != "Operation Successful":
                     raise HTTPError("Failed to logout, message: " + data["message"])
