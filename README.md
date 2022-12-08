@@ -18,27 +18,37 @@ pip install lacrosse_view
 
 This example shows how to get the latest data from every sensor connected to the first location on your account.
 ```python
+
 from lacrosse_view import LaCrosse
 import asyncio
+from datetime import datetime, timedelta
+import time
 
 async def get_data():
     api = LaCrosse()
     # Log in to your LaCrosse View account
-    await api.login('paulus@home-assistant.io', 'password')
+    await api.login('username', 'password')
     # Get the sensors from the first location on the account
     locations = await api.get_locations()
-    sensors = await api.get_sensors(locations[0], tz="America/New_York", start=datetime.now() - timedelta(minutes=1), end=datetime.now())
+    startTime = datetime.now() - timedelta(minutes=1)
+    endTime = datetime.now()
+    startTimeUnix = time.mktime(startTime.timetuple())
+    endTimeUnix = time.mktime(endTime.timetuple())
+    sensors = await api.get_sensors(locations[0], tz="America/Vancouver", start=startTimeUnix, end=endTimeUnix)
  
     for sensor in sensors:
         for field in sensor.sensor_field_names:
             # Each value is a dictionary with keys "s" and "u". "s" is the value and "u" is the Unix timestamp for it.
+            value = sensor.data[field]["values"][-1]["s"]
             print(
-                f"{sensor.name} {field}: {sensor.data[field]["values"][-1]["s"]}"
+                f"{sensor.name} {field}: {value}"
             )
     
     await api.logout()
 
 asyncio.run(get_data())
+
+
 ```
 
 ## Questions?
