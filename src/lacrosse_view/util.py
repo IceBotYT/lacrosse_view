@@ -12,7 +12,7 @@ async def request(
             async with session.request(method, url, **kwargs) as response:
                 data = await response.json()
     else:
-        async with websession.post(method, url, **kwargs) as response:
+        async with websession.request(method, url, **kwargs) as response:
             data = await response.json()
 
     return response, data
