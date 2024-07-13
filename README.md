@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> This project is no longer being updated. I no longer own a LaCrosse View device and I have moved on to other projects.
+
 # La Crosse View
 
 A library for retrieving data from [La Crosse View-connected sensors](https://www.lacrossetechnology.com/collections/lacrosse-view-connected).
