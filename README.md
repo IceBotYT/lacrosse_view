@@ -1,5 +1,6 @@
 > [!IMPORTANT]
 > This project is no longer being updated. I no longer own a LaCrosse View device and I have moved on to other projects.
+> I will only do general fixes required by Home Assistant. If you would like to to take over this repo and maintain it, please let me know.
 
 # La Crosse View
 
