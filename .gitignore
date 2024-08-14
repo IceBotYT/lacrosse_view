@@ -69,3 +69,6 @@ src/test.py
 
 # Snyk
 .dccache
+
+# Venv
+.venv
