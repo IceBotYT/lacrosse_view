@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 import aiohttp
 from pydantic import BaseModel
-from pytz import timezone
+from aiozoneinfo import async_get_time_zone
 import datetime
 
 from .const import DEVICE_URL, LOGIN_URL, SENSORS_URL, LOCATIONS_URL
@@ -73,7 +73,7 @@ class LaCrosse:
             raise LoginError("Login first.")
 
         # Validate the timezone
-        timezone(tz)
+        await async_get_time_zone(tz)
 
         # Check if the start and end times are valid
         if start != "" and end != "":
