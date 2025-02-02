@@ -152,6 +152,44 @@ class LaCrosse:
 
         return devices
     
+    async def get_devices(self, location: Location) -> list[Sensor]:
+        """Get all devices."""
+        if self.token == "":
+            raise LoginError("Login first.")
+
+        headers = {"Authorization": f"Bearer {self.token}"}
+        response, data = await request(
+            SENSORS_URL.format(location_id=str(location.id)),
+            "GET",
+            self.websession,
+            headers=headers,
+        )
+        if response.status != 200:
+            raise HTTPError(
+                f"Failed to get devices, status code: {str(response.status)}",
+                data,
+            )
+        
+        # convert to sensor models
+        devices = []
+        for device in data.get("items"):
+            sensor = device.get("sensor")
+            device = {
+                "name": device.get("name"),
+                "device_id": device.get("id"),
+                "type": sensor.get("type").get("name"),
+                "sensor_id": sensor.get("id"),
+                "sensor_field_names": [
+                    x for x in sensor.get("fields") if x.lower() != "notsupported"
+                ],
+                "location": location,
+                "permissions": sensor.get("permissions"),
+                "model": sensor.get("type").get("name"),
+            }
+            devices.append(Sensor(**device))
+        return devices
+
+    
     async def get_sensor_status(self, sensor: Sensor, tz: str = "America/New_York") -> dict[str, Any]:
         """Get the status of a sensor."""
         if self.token == "":
@@ -217,7 +255,7 @@ class Sensor(BaseModel):
     location: Location
     permissions: dict[str, bool]
     model: str
-    data: dict[str, Any]
+    data: dict[str, Any] | None = None
 
 
 class LaCrosseError(Exception):
