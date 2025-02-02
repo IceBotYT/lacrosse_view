@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from aiozoneinfo import async_get_time_zone
 import datetime
 
-from .const import DEVICE_URL, LOGIN_URL, SENSORS_URL, LOCATIONS_URL
+from .const import DEVICE_URL, LOGIN_URL, SENSORS_URL, LOCATIONS_URL, STATUS_URL
 from .util import request
 
 
@@ -151,6 +151,28 @@ class LaCrosse:
             devices.append(device)
 
         return devices
+    
+    async def get_sensor_status(self, sensor: Sensor, tz: str = "America/New_York") -> dict[str, Any]:
+        """Get the status of a sensor."""
+        if self.token == "":
+            raise LoginError("Login first.")
+        
+        # Validate the timezone
+        await async_get_time_zone(tz)
+
+        headers = {"Authorization": f"Bearer {self.token}"}
+
+        url = STATUS_URL.format(id=sensor.device_id, tz=tz)
+
+        response, data = await request(url, "GET", self.websession, headers=headers)
+
+        if response.status != 200:
+            raise HTTPError(
+                f"Failed to get sensor status, status code: {str(response.status)}",
+                data,
+            )
+
+        return data
 
     async def logout(self) -> bool:
         """Logout from the LaCrosse API."""

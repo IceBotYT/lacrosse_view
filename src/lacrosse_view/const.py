@@ -20,3 +20,8 @@ LOGIN_URL = (
     "identitytoolkit/v3/relyingparty/verifyPassword?"
     "key=AIzaSyD-Uo0hkRIeDYJhyyIg-TvAv8HhExARIO4"
 )
+STATUS_URL = (
+    "https://ingv2.lacrossetechnology.com/"
+    "api/v1.1/active-user/device-association/ref.user-device.{id}/"
+    "status?tz={tz}"
+)
