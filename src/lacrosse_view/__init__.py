@@ -2,13 +2,15 @@
 # Thanks to Keith Prickett for the original code: https://github.com/keithprickett/lacrosse_weather
 
 from __future__ import annotations
-from typing import Any
-import aiohttp
-from pydantic import BaseModel
-from aiozoneinfo import async_get_time_zone
-import datetime
 
-from .const import DEVICE_URL, LOGIN_URL, SENSORS_URL, LOCATIONS_URL, STATUS_URL
+import datetime
+from typing import Any
+
+import aiohttp
+from aiozoneinfo import async_get_time_zone
+from pydantic import BaseModel
+
+from .const import DEVICE_URL, LOCATIONS_URL, LOGIN_URL, SENSORS_URL, STATUS_URL
 from .util import request
 
 
@@ -211,6 +213,51 @@ class LaCrosse:
             )
 
         return data
+    
+    async def get_sensor_status_filtered(
+        self,
+        sensor: Sensor,
+        tz: str | None = None,
+        stale_threshold: datetime.timedelta | None = None,
+        previous_data: dict[str, Any] | None = None,
+    ) -> dict[str, Any] | None:
+        """Get the status of a sensor, filtering out stale readings."""
+        response = await self.get_sensor_status(sensor=sensor, tz=tz)
+
+        if error := response.get("error"):
+            if error == "no_readings":
+                return None
+            raise HTTPError(f"Sensor status error: {error}", {"error": error})
+
+        current_data = response.get("data", {}).get("current")
+        if not current_data:
+            return previous_data
+
+        utc_now = datetime.datetime.now(tz=datetime.timezone.utc)
+        filtered_data: dict[str, Any] = {}
+
+        for field, field_data in current_data.items():
+            spot = field_data.get("spot") if field_data else None
+            if not spot:
+                continue
+
+            timestamp = spot.get("time")
+            if timestamp is not None and stale_threshold is not None:
+                try:
+                    spot_time = datetime.datetime.fromtimestamp(
+                        timestamp, tz=datetime.timezone.utc
+                    )
+                except (TypeError, ValueError, OSError):
+                    continue
+
+                if utc_now - spot_time > stale_threshold:
+                    if previous_data and field in previous_data:
+                        filtered_data[field] = previous_data[field]
+                    continue
+
+            filtered_data[field] = field_data
+
+        return filtered_data
 
     async def logout(self) -> bool:
         """Logout from the LaCrosse API."""
